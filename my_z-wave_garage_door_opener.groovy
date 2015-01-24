@@ -1203,7 +1203,7 @@ def setPinLength(newValue)
 	else if (newValue <= 8)
 	{
 		sendEvent(descriptionText: "$device.displayName attempting to change PIN length to $newValue", displayed: true, isStateChange: true)
-		cmds = secureSequence([zwave.configurationV2.configurationSet(parameterNumber: 10, size: 1, configurationValue: [newValue])],5000)
+//		cmds = secureSequence([zwave.configurationV2.configurationSet(parameterNumber: 10, size: 1, configurationValue: [newValue])],5000)
 	}
 	else
 	{
