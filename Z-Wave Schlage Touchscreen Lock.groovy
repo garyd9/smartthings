@@ -1,5 +1,24 @@
 /**
  *
+ *	INSTRUCTIONS:  If you scroll down a couple pages, you should find a line that looks like:
+ *			main "toggle" 
+ *		and that followed by a line that STARTS with:
+ *			details(["toggle",
+ *		If you want to change the items that are available on the details page of the device (from 'things'),
+ *		you should edit the "details" line to include whatever items you want to see (along with the order
+ *		you want to see them in.)  There's a sample "details" line commented out (starts with //) below the 
+ *		first one.	That sample enables all (or mostly all) the possible items.
+ *
+ *		After the first time you have the device type installed (or after you've changed it), you might have
+ *		to forcibly terminate the mobile app before the new/changed stuff will show up.	 (Most mobile apps
+ *		don't actually terminate when you exit them.  How to terminate an app depends on your mobile OS.)
+ *
+ *		If a toggle is showing up as "loading..." on the UI (and you haven't recently changed it), tap the 
+ *		tile and it should reload the status within 10 seconds.
+ *
+ *	2015-02-02 : changed state values to prevent UI confusion.	(Previously, when setting one item to 'unknown',
+ *		the UI might show ALL the items as 'unknown'.)	Also added beeper toggle.
+ *	
  *	This is a modification of work originally copyrighted by "SmartThings."	 All modifications to their work
  *	is released under the following terms:
  *
@@ -46,6 +65,7 @@
 		capability "Lock Codes"
 		capability "Battery"
 
+		attribute	"beeperMode", "string"
 		attribute	"vacationMode", "string"	// "on", "off", "unknown"
 		attribute	"lockLeave", "string"		// "on", "off", "unknown"
 		attribute	"alarmMode", "string"		// "unknown", "Off", "Alert", "Tamper", "Kick"
@@ -55,7 +75,8 @@
 		attribute	"pinLength", "number"
 
 		command "unlockwtimeout"
-
+		
+		command "setBeeperMode"
 		command "setVacationMode"
 		command "setLockLeave"
 		command "setAlarmMode"
@@ -103,11 +124,11 @@
 		}
 		standardTile("alarmMode", "device.alarmMode", inactiveLabel: true, canChangeIcon: false)
 		{
-			state "unknown", label: 'Alarm Mode\nLoading...', icon:"st.unknown.unknown.unknown", action:"setAlarmMode", nextState:"unknown"
-			state "Off", label: 'Alarm: Off', icon:"st.alarm.beep.beep", action:"setAlarmMode", nextState:"unknown"
-			state "Alert", label: 'Alert Alarm', icon:"st.alarm.beep.beep", action:"setAlarmMode", backgroundColor:"#79b821", nextState:"unknown"
-			state "Tamper", label: 'Tamper Alarm', icon:"st.alarm.beep.beep", action:"setAlarmMode", backgroundColor:"#79b821", nextState:"unknown"
-			state "Kick", label: 'Kick Alarm', icon:"st.alarm.beep.beep", action:"setAlarmMode", backgroundColor:"#79b821", nextState:"unknown"
+			state "unknown_alarmMode", label: 'Alarm Mode\nLoading...', icon:"st.unknown.unknown.unknown", action:"setAlarmMode", nextState:"unknown_alarmMode"
+			state "Off_alarmMode", label: 'Alarm: Off', icon:"st.alarm.beep.beep", action:"setAlarmMode", nextState:"unknown_alarmMode"
+			state "Alert_alarmMode", label: 'Alert Alarm', icon:"st.alarm.beep.beep", action:"setAlarmMode", backgroundColor:"#79b821", nextState:"unknown_alarmMode"
+			state "Tamper_alarmMode", label: 'Tamper Alarm', icon:"st.alarm.beep.beep", action:"setAlarmMode", backgroundColor:"#79b821", nextState:"unknown_alarmMode"
+			state "Kick_alarmMode", label: 'Kick Alarm', icon:"st.alarm.beep.beep", action:"setAlarmMode", backgroundColor:"#79b821", nextState:"unknown_alarmMode"
 		}
 		controlTile("alarmSensitivity", "device.alarmSensitivity", "slider", height: 1, width: 2, inactiveLabel: false)
 		{
@@ -115,41 +136,52 @@
 		}
 		standardTile("autoLock", "device.autoLock", inactiveLabel: true, canChangeIcon: false)
 		{
-			state "unknown", label: 'Auto Lock\nLoading...', icon:"st.unknown.unknown.unknown", action:"setAutoLock", nextState:"unknown"
-			state "off", label: 'Auto Lock', icon:"st.presence.house.unlocked", action:"setAutoLock", nextState:"unknown"
-			state "on", label: 'Auto Lock', icon:"st.presence.house.secured", action:"setAutoLock", backgroundColor:"#79b821", nextState:"unknown"
+			state "unknown_autoLock", label: 'Auto Lock\nLoading...', icon:"st.unknown.unknown.unknown", action:"setAutoLock", nextState:"unknown_autoLock"
+			state "off_autoLock", label: 'Auto Lock', icon:"st.presence.house.unlocked", action:"setAutoLock", nextState:"unknown_autoLock"
+			state "on_autoLock", label: 'Auto Lock', icon:"st.presence.house.secured", action:"setAutoLock", backgroundColor:"#79b821", nextState:"unknown_autoLock"
 		}
 
 		// not included in details
 
 		standardTile("vacationMode", "device.vacationMode", inactiveLabel: true, canChangeIcon: false)
 		{
-			state "unknown", label: 'Vacation\nLoading...', icon:"st.unknown.unknown.unknown", action:"setVacationMode", nextState:"unknown"
-			state "off", label: 'Vacation', icon:"st.Health & Wellness.health2", action:"setVacationMode", nextState:"unknown"
-			state "on", label: 'Vacation', icon:"st.Health & Wellness.health2", action:"setVacationMode", backgroundColor:"#79b821", nextState:"unknown"
+			state "unknown_vacationMode", label: 'Vacation\nLoading...', icon:"st.unknown.unknown.unknown", action:"setVacationMode", nextState:"unknown_vacationMode"
+			state "off_vacationMode", label: 'Vacation', icon:"st.Health & Wellness.health2", action:"setVacationMode", nextState:"unknown_vacationMode"
+			state "on_vacationMode", label: 'Vacation', icon:"st.Health & Wellness.health2", action:"setVacationMode", backgroundColor:"#79b821", nextState:"unknown_vacationMode"
 		}
 
 		// not included in details
 
 		standardTile("lockLeave", "device.lockLeave", inactiveLabel: true, canChangeIcon: false)
 		{
-			state "unknown", label: 'Lock & Leave\nLoading...', icon:"st.unknown.unknown.unknown", action:"setLockLeave", nextState:"unknown"
-			state "off", label: 'Lock & Leave', icon:"st.Health & Wellness.health12", action:"setLockLeave", nextState:"unknown"
-			state "on", label: 'Lock & Leave', icon:"st.Health & Wellness.health12", action:"setLockLeave", backgroundColor:"#79b821", nextState:"unknown"
+			state "unknown_lockLeave", label: 'Lock & Leave\nLoading...', icon:"st.unknown.unknown.unknown", action:"setLockLeave", nextState:"unknown_lockLeave"
+			state "off_lockLeave", label: 'Lock & Leave', icon:"st.Health & Wellness.health12", action:"setLockLeave", nextState:"unknown_lockLeave"
+			state "on_lockLeave", label: 'Lock & Leave', icon:"st.Health & Wellness.health12", action:"setLockLeave", backgroundColor:"#79b821", nextState:"unknown_lockLeave"
 		}
 
 		// not included in details
 
 		standardTile("localControl", "device.localControl", inactiveLabel: true, canChangeIcon: false)
 		{
-			state "unknown", label: 'Local Ctrl\nLoading...', icon:"st.unknown.unknown.unknown", action:"setLocalControl", nextState:"unknown"
-			state "off", label: 'Local Ctrl', icon:"st.Home.home3", action:"setLocalControl", nextState:"unknown"
-			state "on", label: 'Local Ctrl', icon:"st.Home.home3", action:"setLocalControl", backgroundColor:"#79b821", nextState:"unknown"
+			state "unknown_localControl", label: 'Local Ctrl\nLoading...', icon:"st.unknown.unknown.unknown", action:"setLocalControl", nextState:"unknown_localControl"
+			state "off_localControl", label: 'Local Ctrl', icon:"st.Home.home3", action:"setLocalControl", nextState:"unknown_localControl"
+			state "on_localControl", label: 'Local Ctrl', icon:"st.Home.home3", action:"setLocalControl", backgroundColor:"#79b821", nextState:"unknown_localControl"
+		}
+
+
+		// not included in details
+
+		standardTile("beeperMode", "device.beeperMode", inactiveLabel: true, canChangeIcon: false)
+		{
+			state "unknown_beeperMode", label: 'Beeper\nLoading...', icon:"st.unknown.unknown.unknown", action:"setBeeperMode", nextState:"unknown_beeperMode"
+			state "off_beeperMode", label: 'Beeper', icon:"st.unknown.unknown.unknown", action:"setBeeperMode", nextState:"unknown_beeperMode"
+			state "on_beeperMode", label: 'Beeper', icon:"st.unknown.unknown.unknown", action:"setBeeperMode", backgroundColor:"#79b821", nextState:"unknown_beeperMode"
 		}
 
 
 		main "toggle"
-		details(["toggle", "lock", "unlock", "alarmMode", "alarmSensitivity", "battery", "autoLock", "refresh"])
+		details(["toggle", "lock", "unlock", "alarmMode", "alarmSensitivity", "battery", "autoLock", "lockLeave", "refresh"])
+//		details(["toggle", "lock", "unlock", "alarmMode", "alarmSensitivity", "battery", "autoLock", "lockLeave", "vacationMode", "beeperMode", "refresh"])
 	}
 }
 
@@ -248,7 +280,7 @@ def zwaveEvent(physicalgraph.zwave.commands.alarmv2.AlarmReport cmd)
 {
 	def result = []
 	def map = null
-	if (cmd.zwaveAlarmType == physicalgraph.zwave.commands.alarmv2.AlarmReport.ZWAVE_ALARM_TYPE_ACCESS_CONTROL)  /* 0x06 */
+	if (cmd.zwaveAlarmType == physicalgraph.zwave.commands.alarmv2.AlarmReport.ZWAVE_ALARM_TYPE_ACCESS_CONTROL)	 /* 0x06 */
 	{
 		if (1 <= cmd.zwaveAlarmEvent && cmd.zwaveAlarmEvent < 10)
 		{
@@ -519,45 +551,19 @@ def zwaveEvent(physicalgraph.zwave.commands.configurationv2.ConfigurationReport 
 	switch (cmd.parameterNumber)
 	{
 		case 0x3:
-			desc = "Beeper"
-			if (cmd.configurationValue[0] == 0)
-			{
-				val = "Disabled"
-			}
-			else
-			{
-				val = "Enabled"
-			}
+			map = parseBinaryConfigRpt('beeperMode', cmd.configurationValue[0], 'Beeper Mode')
 			break
 
 		// done:  vacation mode toggle
 		case 0x4:
-			map = [ name: 'vacationMode', displayed: true ]
-			if (cmd.configurationValue[0] == 0)
-			{
-				map.value = "off"
-			}
-			else
-			{
-				map.value = "on"
-			}
-			map.descriptionText = "$device.displayName Vacation Mode has been turned $map.value"
+			map = parseBinaryConfigRpt('vacationMode', cmd.configurationValue[0], 'Vacation Mode')
 			break
 
 		// done: lock and leave mode
 		case 0x5:
-			map = [ name: 'lockLeave', displayed: true ]
-			if (cmd.configurationValue[0] == 0)
-			{
-				map.value = "off"
-			}
-			else
-			{
-				map.value = "on"
-			}
-			map.descriptionText = "$device.displayName Lock & Leave has been turned $map.value"
+			map = parseBinaryConfigRpt('lockLeave', cmd.configurationValue[0], 'Lock & Leave')
 			break
-
+		
 		// these don't seem to be useful.  It's just a bitmap of the code slots used.
 		case 0x6:
 			desc = "User Slot Bit Fields"
@@ -571,22 +577,22 @@ def zwaveEvent(physicalgraph.zwave.commands.configurationv2.ConfigurationReport 
 			switch (cmd.configurationValue[0])
 			{
 				case 0x00:
-					map.value = "Off"
+					map.value = "Off_alarmMode"
 					break
 				case 0x01:
-					map.value = "Alert"
+					map.value = "Alert_alarmMode"
 					result << response(secure(zwave.configurationV2.configurationGet(parameterNumber: 0x08)))
 					break
 				case 0x02:
-					map.value = "Tamper"
+					map.value = "Tamper_alarmMode"
 					result << response(secure(zwave.configurationV2.configurationGet(parameterNumber: 0x09)))
 					break
 				case 0x03:
-					map.value = "Kick"
+					map.value = "Kick_alarmMode"
 					result << response(secure(zwave.configurationV2.configurationGet(parameterNumber: 0x0A)))
 					break
 				default:
-					map.value = "unknown"
+					map.value = "unknown_alarmMode"
 			}
 			map.descriptionText = "$device.displayName Alarm Mode set to \"$map.value\""
 			break
@@ -617,7 +623,7 @@ def zwaveEvent(physicalgraph.zwave.commands.configurationv2.ConfigurationReport 
 
 			map = [ descriptionText: "$device.displayName Alarm $whichMode Sensitivity set to $val", displayed: true ]
 
-			if (curAlarmMode == whichMode)
+			if (curAlarmMode == "${whichMode}_alarmMode")
 			{
 				map.name = "alarmSensitivity"
 				map.value = modifiedValue
@@ -631,16 +637,7 @@ def zwaveEvent(physicalgraph.zwave.commands.configurationv2.ConfigurationReport 
 			break
 
 		case 0xB:
-			map = [ name: 'localControl', displayed: true ]
-			if (cmd.configurationValue[0] == 0)
-			{
-				map.value = "off"
-			}
-			else
-			{
-				map.value = "on"
-			}
-			map.descriptionText = "$device.displayName Local Alarm Control has been turned $map.value"
+			map = parseBinaryConfigRpt('localControl', cmd.configurationValue[0], 'Local Alarm Control')
 			break
 
 		// how many times has the electric motor locked or unlock the device?
@@ -666,16 +663,7 @@ def zwaveEvent(physicalgraph.zwave.commands.configurationv2.ConfigurationReport 
 
 		// done: auto lock mode
 		case 0xF:
-			map = [ name: 'autoLock', displayed: true ]
-			if (cmd.configurationValue[0] == 0)
-			{
-				map.value = "off"
-			}
-			else
-			{
-				map.value = "on"
-			}
-			map.descriptionText = "$device.displayName Auto Lock has been turned $map.value"
+			map = parseBinaryConfigRpt('autoLock', cmd.configurationValue[0], 'Auto Lock')
 			break
 
 		// this will be useful as an attribute/command usable by a smartapp
@@ -710,6 +698,20 @@ def zwaveEvent(physicalgraph.zwave.commands.configurationv2.ConfigurationReport 
 		result << createEvent([ descriptionText: "$device.displayName reports \"$desc\" configured as \"$val\"", displayed: true, isStateChange: true ])
 	}
 	result
+}
+
+def parseBinaryConfigRpt(paramName, paramValue, paramDesc)
+{
+	def map = [ name: paramName, displayed: true ]
+	
+	def newVal = "on"
+	if (paramValue == 0)
+	{
+		newVal = "off"
+	}
+	map.value = "${newVal}_${paramName}"
+	map.descriptionText = "$device.displayName $paramDesc has been turned $newVal"
+	return map
 }
 
 
@@ -853,7 +855,7 @@ def refresh()
 			zwave.doorLockV1.doorLockOperationGet(),
 //			  zwave.configurationV2.configurationBulkGet(numberOfParameters: 3, parameterOffset: 0x8),
 //			  zwave.configurationV2.configurationBulkGet(numberOfParameters: 4, parameterOffset: 0x3),
-//			  zwave.configurationV2.configurationGet(parameterNumber: 0x3),		// beeper
+//			  zwave.configurationV2.configurationGet(parameterNumber: 0x3),		// beeper (done)
 //			  zwave.configurationV2.configurationGet(parameterNumber: 0x4),		// vacation mode (done)
 //			  zwave.configurationV2.configurationGet(parameterNumber: 0x5),		// lock and leave (done)
 //			  zwave.configurationV2.configurationGet(parameterNumber: 0x6),		// user slot bit field (not needed)
@@ -1105,15 +1107,15 @@ def setOnOffParameter(paramName, paramNumber)
 	def cmds = null
 	def cs = device.currentValue(paramName)
 
-	// change lockLeave to the 'unknown' value - it will get refreshed after it is done changing
-	sendEvent(name: paramName, value: 'unknown', displayed: false )
+	// change parameter to the 'unknown' value - it will get refreshed after it is done changing
+	sendEvent(name: paramName, value: "unknown_${paramName}", displayed: false )
 
-	if (cs == "on")
+	if (cs == "on_${paramName}")
 	{
 		// turn it off
 		cmds = secureSequence([zwave.configurationV2.configurationSet(parameterNumber: paramNumber, size: 1, configurationValue: [0])],5000)
 	}
-	else if (cs == "off")
+	else if (cs == "off_${paramName}")
 	{
 		// turn it on
 		cmds = secureSequence([zwave.configurationV2.configurationSet(parameterNumber: paramNumber, size: 1, configurationValue: [0xFF])],5000)
@@ -1127,6 +1129,11 @@ def setOnOffParameter(paramName, paramNumber)
 	log.debug "set $paramName sending ${cmds.inspect()}"
 
 	cmds
+}
+
+def setBeeperMode()
+{
+	setOnOffParameter("beeperMode", 0x3)
 }
 
 def setVacationMode()
@@ -1159,23 +1166,23 @@ def setAlarmMode()
 
 	switch (cs)
 	{
-		case "Off":
+		case "Off_alarmMode":
 			newMode = 0x1
 			break
 
-		case "Alert":
+		case "Alert_alarmMode":
 			newMode = 0x2
 			break
 
-		case "Tamper":
+		case "Tamper_alarmMode":
 			newMode = 0x3
 			break;
 
-		case "Kick":
+		case "Kick_alarmMode":
 			newMode = 0x0
 			break;
 
-		case "unknown":
+		case "unknown_alarmMode":
 		default:
 			// don't send a mode - instead request the current state
 			cmds = secureSequence([zwave.configurationV2.configurationGet(parameterNumber: 0x7)], 5000)
@@ -1203,7 +1210,7 @@ def setPinLength(newValue)
 	else if (newValue <= 8)
 	{
 		sendEvent(descriptionText: "$device.displayName attempting to change PIN length to $newValue", displayed: true, isStateChange: true)
-//		cmds = secureSequence([zwave.configurationV2.configurationSet(parameterNumber: 10, size: 1, configurationValue: [newValue])],5000)
+		cmds = secureSequence([zwave.configurationV2.configurationSet(parameterNumber: 10, size: 1, configurationValue: [newValue])],5000)
 	}
 	else
 	{
