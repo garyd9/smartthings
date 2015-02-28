@@ -1,6 +1,7 @@
 /**
  *	Door Unlock Triggers
  *
+ *  28-Feb-2015: fix timezone bug
  *  27-Feb-2015: added "nightonly" toggle
  *
  *	Copyright 2015 Gary D
@@ -126,8 +127,9 @@ def lockHandler(evt)
 	def bIsValidTime = !nightOnly
     if (!bIsValidTime)
     {
-		// possibly update the sunrise/sunset data. (don't force the update)
-		retrieveSunData(false)
+    	def tz = TimeZone.getTimeZone("UTC")
+    	// possibly update the sunrise/sunset data. (don't force the update)
+    	retrieveSunData(false)
     	bIsValidTime = ((now() < timeToday(state.sunriseTime, tz).time) || (now() > timeToday(state.sunsetTime, tz).time))
     }
 	
