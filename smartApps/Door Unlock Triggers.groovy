@@ -1,6 +1,8 @@
 /**
  *	Door Unlock Triggers
  *
+ *  27-Feb-2015: added "nightonly" toggle
+ *
  *	Copyright 2015 Gary D
  *
  *	Licensed under the Apache License, Version 2.0 WITH EXCEPTIONS; you may not use this file except
@@ -31,14 +33,15 @@ definition(
 	name: "Door Unlock Triggers",
 	namespace: "garyd9",
 	author: "Gary D",
-	description: "Triggers switches, door controls, etc based on lock events",
+	description: "Triggers switches, door controls, etc based on door control unlock events",
 	category: "Convenience",
 	iconUrl: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience.png",
 	iconX2Url: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience@2x.png",
 	iconX3Url: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience@2x.png")
 
 
-preferences {
+preferences 
+{
 
 	section("When a door unlocks...") 
 	{
@@ -55,6 +58,11 @@ preferences {
 		input "switches", "capability.switch", title: "Turn on these switches", multiple: true, required: false
 		input name: "sendPush", type: "bool", title: "Push notification to mobile devices?", defaultValue: false
 	}
+    section("Within these limits:")
+    {
+		input name: "nightOnly", type: "bool", title: "Only between sunset and sunrise?"
+    }
+
 }
 
 def installed() 
@@ -71,6 +79,12 @@ def updated()
 def initialize() 
 {
 	subscribe(lock1, "lock.unlocked", lockHandler)
+    if (nightOnly)
+    {
+		// force updating the sunrise/sunset data
+		retrieveSunData(true)
+    }
+    
 }
 
 
@@ -109,31 +123,59 @@ def performActions(evt)
 
 def lockHandler(evt) 
 {
-	log.debug "lockHandler:"
-	log.debug "	   description:	 $evt.descriptionText"
-	log.debug "	   unlockCode:	$unlockCode"
+	def bIsValidTime = !nightOnly
+    if (!bIsValidTime)
+    {
+		// possibly update the sunrise/sunset data. (don't force the update)
+		retrieveSunData(false)
+    	bIsValidTime = ((now() < timeToday(state.sunriseTime, tz).time) || (now() > timeToday(state.sunsetTime, tz).time))
+    }
 	
-	if (evt.data != null)
-	{
-		def evData = parseJson(evt.data)
-		if (unlockCode.contains((evData.usedCode).toString()))
-		{
-			performActions(evt)
-		}
-	}
-	else // evdata is null
-	{
-		if (evt.descriptionText.contains("manually"))
-		{
-			if (unlockCode.contains("Manual"))
-			{	// event describes a manual event, and unlockCode is looking for "manual"...
-				performActions(evt)
-			}
-		}
-		else if (unlockCode.contains("Other"))
-		{	// event description doesn't contain "manually" and the evt.data is null... so it must be "other"
-			performActions(evt)
-		}
-	}
+	if (bIsValidTime)
+    {
+        if (evt.data != null)
+        {
+            def evData = parseJson(evt.data)
+            if (unlockCode.contains((evData.usedCode).toString()))
+            {
+                performActions(evt)
+            }
+        }
+        else // evdata is null
+        {
+            if (evt.descriptionText.contains("manually"))
+            {
+                if (unlockCode.contains("Manual"))
+                {	// event describes a manual event, and unlockCode is looking for "manual"...
+                    performActions(evt)
+                }
+            }
+            else if (unlockCode.contains("Other"))
+            {	// event description doesn't contain "manually" and the evt.data is null... so it must be "other"
+                performActions(evt)
+            }
+        }
+    }
 }
 
+def retrieveSunData(forceIt)
+{
+	if ((true == forceIt) || (now() > state.nextSunCheck))
+	{
+		state.nextSunCheck = now() + (1000 * (60 * 60 *12)) // every 12 hours
+		log.debug "Updating sunrise/sunset data"
+
+	/* instead of absolute timedate stamps for sunrise and sunset, use just hours/minutes.	The reason
+	   is that if we miss updating the sunrise/sunset data for a day or two, at least the times will be
+	   within a few minutes */
+
+
+		def sunData = getSunriseAndSunset()
+
+		state.sunsetTime = sunData.sunset.hours + ':' + sunData.sunset.minutes
+		state.sunriseTime = sunData.sunrise.hours + ':' + sunData.sunrise.minutes
+
+		log.debug "Sunrise time: ${state.sunriseTime} UTC"
+		log.debug "Sunset time: ${state.sunsetTime} UTC"
+	}
+}
