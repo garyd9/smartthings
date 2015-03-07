@@ -1,24 +1,26 @@
 /**
  *
  *	INSTRUCTIONS:  If you scroll down a couple pages, you should find a line that looks like:
- *			main "toggle" 
+ *			main "toggle"
  *		and that followed by a line that STARTS with:
  *			details(["toggle",
  *		If you want to change the items that are available on the details page of the device (from 'things'),
  *		you should edit the "details" line to include whatever items you want to see (along with the order
- *		you want to see them in.)  There's a sample "details" line commented out (starts with //) below the 
+ *		you want to see them in.)  There's a sample "details" line commented out (starts with //) below the
  *		first one.	That sample enables all (or mostly all) the possible items.
  *
  *		After the first time you have the device type installed (or after you've changed it), you might have
  *		to forcibly terminate the mobile app before the new/changed stuff will show up.	 (Most mobile apps
  *		don't actually terminate when you exit them.  How to terminate an app depends on your mobile OS.)
  *
- *		If a toggle is showing up as "loading..." on the UI (and you haven't recently changed it), tap the 
+ *		If a toggle is showing up as "loading..." on the UI (and you haven't recently changed it), tap the
  *		tile and it should reload the status within 10 seconds.
  *
+ *	2015-03-07 : When the lock is locked/unlocked automatically, from the keypad, or manually, include that
+ *		information in the map.data, usedCode.	(0 for keypad, "manual" for manually, and "auto" for automatic)
  *	2015-02-02 : changed state values to prevent UI confusion.	(Previously, when setting one item to 'unknown',
  *		the UI might show ALL the items as 'unknown'.)	Also added beeper toggle.
- *	
+ *
  *	This is a modification of work originally copyrighted by "SmartThings."	 All modifications to their work
  *	is released under the following terms:
  *
@@ -75,7 +77,7 @@
 		attribute	"pinLength", "number"
 
 		command "unlockwtimeout"
-		
+
 		command "setBeeperMode"
 		command "setVacationMode"
 		command "setLockLeave"
@@ -290,9 +292,11 @@ def zwaveEvent(physicalgraph.zwave.commands.alarmv2.AlarmReport cmd)
 		{
 			case 1:
 				map.descriptionText = "$device.displayName was manually locked"
+				map.data = [ usedCode: "manual" ]
 				break
 			case 2:
 				map.descriptionText = "$device.displayName was manually unlocked"
+				map.data = [ usedCode: "manual" ]
 				break
 			case 5:
 				if (cmd.eventParameter)
@@ -300,6 +304,12 @@ def zwaveEvent(physicalgraph.zwave.commands.alarmv2.AlarmReport cmd)
 					map.descriptionText = "$device.displayName was locked with code ${cmd.eventParameter.first()}"
 					map.data = [ usedCode: cmd.eventParameter[0] ]
 				}
+				else
+				{
+					map.descriptionText = "$device.displayName was locked with keypad"
+					map.data = [ usedCode: 0 ]
+				}
+
 				break
 			case 6:
 				if (cmd.eventParameter)
@@ -307,9 +317,15 @@ def zwaveEvent(physicalgraph.zwave.commands.alarmv2.AlarmReport cmd)
 					map.descriptionText = "$device.displayName was unlocked with code ${cmd.eventParameter.first()}"
 					map.data = [ usedCode: cmd.eventParameter[0] ]
 				}
+				else
+				{
+					map.descriptionText = "$device.displayName was unlocked with keypad"
+					map.data = [ usedCode: 0 ]
+				}
 				break
 			case 9:
 				map.descriptionText = "$device.displayName was autolocked"
+				map.data = [ usedCode: "auto" ]
 				break
 			case 7:
 			case 8:
@@ -362,6 +378,7 @@ def zwaveEvent(physicalgraph.zwave.commands.alarmv2.AlarmReport cmd)
 	}
 	else switch(cmd.alarmType)
 	{
+/*		// Schlage locks should be using the alarmv2 variables above or lock/unlock events
 		case 21:  // Manually locked
 		case 18:  // Locked with keypad
 		case 24:  // Locked by command (Kwikset 914)
@@ -381,6 +398,7 @@ def zwaveEvent(physicalgraph.zwave.commands.alarmv2.AlarmReport cmd)
 		case 25:  // Kwikset 914 unlocked by command
 			map = [ name: "lock", value: "unlocked" ]
 			break
+*/
 		case 9:
 		case 17:
 		case 23:
@@ -563,7 +581,7 @@ def zwaveEvent(physicalgraph.zwave.commands.configurationv2.ConfigurationReport 
 		case 0x5:
 			map = parseBinaryConfigRpt('lockLeave', cmd.configurationValue[0], 'Lock & Leave')
 			break
-		
+
 		// these don't seem to be useful.  It's just a bitmap of the code slots used.
 		case 0x6:
 			desc = "User Slot Bit Fields"
@@ -703,7 +721,7 @@ def zwaveEvent(physicalgraph.zwave.commands.configurationv2.ConfigurationReport 
 def parseBinaryConfigRpt(paramName, paramValue, paramDesc)
 {
 	def map = [ name: paramName, displayed: true ]
-	
+
 	def newVal = "on"
 	if (paramValue == 0)
 	{
