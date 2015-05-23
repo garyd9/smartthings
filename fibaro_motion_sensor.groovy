@@ -244,6 +244,8 @@ def zwaveEvent(physicalgraph.zwave.commands.wakeupv1.WakeUpNotification cmd)
 {
 	sendEvent(descriptionText: "${device.displayName} woke up", displayed: true, isStateChange: true)
     def result = []
+    result << zwave.configurationV1.configurationSet(configurationValue: [26], parameterNumber: 1, size: 1).format()
+	result << "delay 1200"
 	result << zwave.wakeUpV1.wakeUpIntervalSet(seconds: 7200, nodeid:zwaveHubNodeId).format() // this should be changed back to 7200
     result << zwave.batteryV1.batteryGet().format()
 	result << "delay 1200"
@@ -280,7 +282,7 @@ def zwaveEvent(physicalgraph.zwave.commands.batteryv1.BatteryReport cmd) {
 log.debug cmd
 	def map = [:]
 	map.name = "battery"
-	map.value = cmd.batteryLevel > 0 ? cmd.batteryLevel.toString() : 1
+	map.value = cmd.batteryLevel > 0 ? cmd.batteryLevel : 1
 	map.unit = "%"
 	map.displayed = true
     map.isStateChange = true
@@ -391,7 +393,7 @@ def updateZwaveParam(params) {
 def resetParams2StDefaults() {
 	log.debug "Resetting Sensor Parameters to SmartThings Compatible Defaults"
 	def cmds = []
-	cmds << zwave.configurationV1.configurationSet(configurationValue: [25], parameterNumber: 1, size: 1).format()	// motion sensor sensitivity (lower is more sensitive) (def 10)
+	cmds << zwave.configurationV1.configurationSet(configurationValue: [26], parameterNumber: 1, size: 1).format()	// motion sensor sensitivity (lower is more sensitive) (def 10)
     cmds << zwave.configurationV1.configurationSet(configurationValue: [15], parameterNumber: 2, size: 1).format()	// motion sensor "blind" time (def: 15)
     cmds << zwave.configurationV1.configurationSet(configurationValue: [1], parameterNumber: 3, size: 1).format()	// PIR "pulse counter" (def: 3)
     cmds << zwave.configurationV1.configurationSet(configurationValue: [2], parameterNumber: 4, size: 1).format()	// PIR "window time" (def: 2 (12 seconds))
