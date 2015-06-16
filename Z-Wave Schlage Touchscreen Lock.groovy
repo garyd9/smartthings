@@ -957,9 +957,15 @@ def poll()
 		}
 		if(cmds) cmds << "delay 6000"
 	}
+	reportAllCodes(state)
 	log.debug "poll is sending ${cmds.inspect()}, state: ${state.inspect()}"
 	device.activity()  // workaround to keep polling from being shut off
 	cmds ?: null
+}
+
+def reportAllCodes(state) {
+  def map = [ name: "reportAllCodes", data: state, displayed: true, isStateChange: true ]
+  sendEvent(map)
 }
 
 def requestCode(codeNumber)
